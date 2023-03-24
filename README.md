@@ -4,7 +4,7 @@
 
 ---
 
-**One time : **
+**One time :**
 python -m venv env
 
 ---
