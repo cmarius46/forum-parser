@@ -14,9 +14,9 @@ class PhpForumSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        # threads_list = response.xpath('//*[@id="page-body"]/div[4]/div/ul[2]/li[1]/dl').get()
+        threads_list = response.xpath('//*[@id="page-body"]/div[4]/div/ul[2]').get()
     
-        threads_list = response.css("dl.row-item.sticky_read").getall()
+        # threads_list = response.css("dl.row-item.sticky_read").getall()
 
         # self.log(str(response))
 

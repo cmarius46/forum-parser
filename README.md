@@ -1,9 +1,13 @@
 Run : 
 
+---
 
+One time : 
 python -m venv env
 
+---
 
+Every time : 
 ./env/scripts/activate
 
 
