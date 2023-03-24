@@ -17,6 +17,7 @@ python -m venv env
 
 scrapy crawl phpforum
 
+---
 
 Codul pt spiderul "phpforum" se gaseste in scraper/scraper/spiders/test_spider.py
 
