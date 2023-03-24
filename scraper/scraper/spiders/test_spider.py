@@ -8,8 +8,6 @@ class PhpForumSpider(scrapy.Spider):
 
     _forums = [
         {# forum object
-            
-            # object of type topic
             'metadata': {
                 'baseForumUrl': 'https://www.php-forum.com/phpforum/',
                 'postCssSelector': 'dl.row-item',
@@ -23,25 +21,13 @@ class PhpForumSpider(scrapy.Spider):
                 'url': 'https://www.php-forum.com/phpforum/viewforum.php?f=2',
                 
             },]
-            # has the same use as postCssSelector
 
         },
     ]
 
     def start_requests(self):
         for forum in self._forums:
-    #         self.parse_forum(forum)
-
-
-    # def parse_forum(self, forum):
-    #     pass
-
-
-            # determine the innerForums of this forum
-           
             for topic in forum['topics']:
-                # TODO rethink the forum object so as not to carry all the unnecessary 
-                # information around for no reason
 
                 metadata_copy = forum['metadata']
                 metadata_copy['topic'] = topic
@@ -57,14 +43,7 @@ class PhpForumSpider(scrapy.Spider):
 
         for last_post_time, post_anchor in zip(last_post_times, post_anchors):
             if self._is_recent(last_post_time):
-                # print(last_post_time)
-                # print(post_anchor)
                 self._process_post(post_anchor, topic_metadata)
-
-        # with open('data.html', 'w', encoding='utf-8') as w_file:
-        #     for last_post_time, post_anchor in zip(last_post_times, post_anchors):
-        #         w_file.write(str(last_post_time) + ' ' + str(post_anchor) + '\n')
-            # w_file.write(str(post_anchors))
 
 
     def parse_post(self, response, topic_metadata):
@@ -73,7 +52,7 @@ class PhpForumSpider(scrapy.Spider):
         print('yes')
         return
         
-        # # functionalitatea originala, de lasat comantata pana dupa debug
+        # # functionalitatea originala, de lasat comentata pana dupa debug
         # comments = response.css(topic_metadata['commentCssSelector'])
         # texts = comments.xpath(topic_metadata['commentTextXpath'])
         # print(texts)
