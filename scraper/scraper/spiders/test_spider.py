@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import scrapy
+import datetime
 
 
 class PhpForumSpider(scrapy.Spider):
@@ -102,9 +103,10 @@ class PhpForumSpider(scrapy.Spider):
         return has_ul_inside_pagination is not None
 
 
-    def _is_recent(self, datetime):
-        # TODO complete
-        return True
+    def _is_recent(self, post_datetime):
+        post_datetime = datetime.datetime.fromisoformat(post_datetime).replace(tzinfo=datetime.timezone.utc)
+        one_month_ago = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc) - datetime.timedelta(days=30)
+        return post_datetime > one_month_ago
 
 
     def _post_has_pagination():
