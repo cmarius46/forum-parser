@@ -20,6 +20,7 @@ class PhpForumSpider(scrapy.Spider):
                 'commentTextCssSelector': 'div.content',
                 'commentTimePostedXpath': './div/div[1]/div/p/a/time/@datetime',
                 'multiplePagesCssSelector': 'div.pagination',
+                'multiplePagesXpath': '//div[@class="pagination"]/ul',
             },
         },
     ]
@@ -36,9 +37,8 @@ class PhpForumSpider(scrapy.Spider):
         for topic in topics: 
             forum_metadata['topic'] = topic
             forum_metadata['topicUrl'] = forum_metadata['baseForumUrl'] + topic[2:]
-            self.send_to_api(forum_metadata['topicUrl'])
-            # yield scrapy.Request(url=forum_metadata['topicUrl'], callback=self.parse_topic, cb_kwargs={'topic_metadata': forum_metadata})
-    
+            yield scrapy.Request(url=forum_metadata['topicUrl'], callback=self.parse_topic, cb_kwargs={'topic_metadata': forum_metadata})
+            break
 
 
     def parse_topic(self, response, topic_metadata):
@@ -50,18 +50,20 @@ class PhpForumSpider(scrapy.Spider):
         for last_post_time, post_anchor in zip(last_post_times, post_anchors):
             if self._is_recent(last_post_time):
                 post_url = topic_metadata['baseForumUrl'] + str(post_anchor[2:])
-                yield scrapy.Request(url=post_url, callback=self.process_post, cb_kwargs={'topic_metadata': topic_metadata})
+                topic_metadata['postUrl'] = post_url
+                yield scrapy.Request(url=post_url, callback=self.process_post, cb_kwargs={'post_metadata': topic_metadata})
 
 
-    def process_post(self, response, topic_metadata):
+    def process_post(self, response, post_metadata):
         # process a post from the forum
-        if self._has_multiple_pages(response, topic_metadata):
+        if self._has_multiple_pages(response, post_metadata):
             urls = self._generate_urls(response)
             for url in urls:
-                yield scrapy.Request(url=url, callback=self._process_one_page_of_post, cb_kwargs={'topic_metadata': topic_metadata})
+                post_metadata['postUrl'] = url
+                yield scrapy.Request(url=url, callback=self._process_one_page_of_post, cb_kwargs={'post_metadata': post_metadata})
         else:
             # one page topic
-            self._process_one_page_of_post(response, topic_metadata)
+            self._process_one_page_of_post(response, post_metadata)
 
 
     def send_to_api(self, data): # ,metadata
@@ -79,15 +81,14 @@ class PhpForumSpider(scrapy.Spider):
         return urls
 
 
-    def _process_one_page_of_post(self, page, topic_metadata):
-        print('called')
-        comments = page.css(topic_metadata['commentCssSelector']) 
+    def _process_one_page_of_post(self, page, post_metadata):
+        comments = page.css(post_metadata['commentCssSelector']) 
         texts = []
         for comment in comments:
-            text = comment.xpath(topic_metadata['commentTextXpath']).getall()
-            # using .get() causes not getting all the data from the messages
+            text = comment.xpath(post_metadata['commentTextXpath']).getall()
+            # for some reason, using .get() causes not getting all the data from the messages
 
-            time_posted = comment.xpath(topic_metadata['commentTimePostedXpath']).get()
+            time_posted = comment.xpath(post_metadata['commentTimePostedXpath']).get()
             if self._is_recent(time_posted):
                 texts.append(text)
                 # we don't break on else since we don't know the order of processing
@@ -96,8 +97,8 @@ class PhpForumSpider(scrapy.Spider):
         self.send_to_api(texts)
 
 
-    def _has_multiple_pages(self, topic, topic_metadata):
-        has_ul_inside_pagination = topic.xpath('//div[@class="pagination"]/ul').get()
+    def _has_multiple_pages(self, topic, post_metadata):
+        has_ul_inside_pagination = topic.xpath(post_metadata['multiplePagesXpath']).get()
         return has_ul_inside_pagination is not None
 
 
