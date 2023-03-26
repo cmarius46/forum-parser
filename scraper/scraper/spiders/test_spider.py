@@ -10,6 +10,7 @@ class PhpForumSpider(scrapy.Spider):
         {# forum object
             'metadata': {
                 'baseForumUrl': 'https://www.php-forum.com/phpforum/',
+                'topicCssSelector' : 'a.forumtitle::attr(href)',
                 'postCssSelector': 'dl.row-item',
                 'postXpath' : '//*[@id="page-body"]/div[4]/div/ul[2]/li[1]/dl', 
                 'lastPostTimesXpath' : './dd[3]/span/time/@datetime',
@@ -20,24 +21,24 @@ class PhpForumSpider(scrapy.Spider):
                 'commentTimePostedXpath': './div/div[1]/div/p/a/time/@datetime',
                 'multiplePagesCssSelector': 'div.pagination',
             },
-            'topics': [{
-                'url': 'https://www.php-forum.com/phpforum/viewforum.php?f=2',
-                
-            },]
-
         },
     ]
 
     def start_requests(self):
         for forum in self._forums:
-
             # TODO dynamically 'get topic urls'
+            yield scrapy.Request(url=forum['metadata']['baseForumUrl'], callback=self.parse_forum, cb_kwargs={'forum_metadata': forum['metadata']})
+            
 
-            for topic in forum['topics']:
-                metadata_copy = forum['metadata']
-                metadata_copy['topic'] = topic
+    def parse_forum(self, response, forum_metadata):
+        topics = response.css(forum_metadata['topicCssSelector']).getall()
 
-                yield scrapy.Request(url=topic['url'], callback=self.parse_topic, cb_kwargs={'topic_metadata': metadata_copy})
+        for topic in topics: 
+            forum_metadata['topic'] = topic
+            forum_metadata['topicUrl'] = forum_metadata['baseForumUrl'] + topic[2:]
+            self.send_to_api(forum_metadata['topicUrl'])
+            # yield scrapy.Request(url=forum_metadata['topicUrl'], callback=self.parse_topic, cb_kwargs={'topic_metadata': forum_metadata})
+    
 
 
     def parse_topic(self, response, topic_metadata):
@@ -98,7 +99,6 @@ class PhpForumSpider(scrapy.Spider):
     def _has_multiple_pages(self, topic, topic_metadata):
         has_ul_inside_pagination = topic.xpath('//div[@class="pagination"]/ul').get()
         return has_ul_inside_pagination is not None
-
 
 
     def _is_recent(self, datetime):
