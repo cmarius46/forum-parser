@@ -39,7 +39,7 @@ class PhpForumSpider(scrapy.Spider):
             forum_metadata['topic'] = topic
             forum_metadata['topicUrl'] = forum_metadata['baseForumUrl'] + topic[2:]
             yield scrapy.Request(url=forum_metadata['topicUrl'], callback=self.parse_topic, cb_kwargs={'topic_metadata': forum_metadata})
-            break
+            break # TODO remove this to parse all topics
 
 
     def parse_topic(self, response, topic_metadata):
