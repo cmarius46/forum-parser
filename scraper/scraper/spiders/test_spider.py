@@ -28,7 +28,7 @@ class PhpForumSpider(scrapy.Spider):
 
     def start_requests(self):
         for forum in self._forums:
-            # TODO dynamically 'get topic urls'
+            # TODO this must be updated to get the urls dynamically
             yield scrapy.Request(url=forum['metadata']['baseForumUrl'], callback=self.parse_forum, cb_kwargs={'forum_metadata': forum['metadata']})
             
 
@@ -39,7 +39,7 @@ class PhpForumSpider(scrapy.Spider):
             forum_metadata['topic'] = topic
             forum_metadata['topicUrl'] = forum_metadata['baseForumUrl'] + topic[2:]
             yield scrapy.Request(url=forum_metadata['topicUrl'], callback=self.parse_topic, cb_kwargs={'topic_metadata': forum_metadata})
-            break # TODO remove this to parse all topics
+            break # remove this to parse all topics
 
 
     def parse_topic(self, response, topic_metadata):
@@ -68,16 +68,12 @@ class PhpForumSpider(scrapy.Spider):
 
 
     def send_to_api(self, data): # ,metadata
-        # TODO complete
-        # this should send the data and metadata
+        # TODO incomplete, only for POC purposes
         self._debug_write_to_file(data)
 
 
     def _generate_urls(self, response):
         # hardcoded for the first blog.
-        # TODO make this as dynamically as possible
-        # something like 
-        # get first page -> get last page -> get the base url -> generate urls
         urls = [f'https://www.php-forum.com/phpforum/viewtopic.php?t=1225&start={i}' for i in range(0, 250, 25)]
         return urls
 
@@ -87,14 +83,11 @@ class PhpForumSpider(scrapy.Spider):
         texts = []
         for comment in comments:
             text = comment.xpath(post_metadata['commentTextXpath']).getall()
-            # for some reason, using .get() causes not getting all the data from the messages
 
             time_posted = comment.xpath(post_metadata['commentTimePostedXpath']).get()
             if self._is_recent(time_posted):
                 texts.append(text)
-                # we don't break on else since we don't know the order of processing
         
-        # TODO add something related to the post itself, so that comments on different pages of the same post can be aggregated
         self.send_to_api(texts)
 
 
